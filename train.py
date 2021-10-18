@@ -24,25 +24,22 @@ torch.manual_seed(0)
 
 class LSTM(nn.Module):
 
-    def __init__(self, dimension=256):
+    def __init__(self, dimension=512):
         super(LSTM, self).__init__()
 
         self.embedding = nn.Embedding(len(text_field.vocab), 300)
         self.dimension = dimension
         self.lstm = nn.LSTM(input_size=300,
                             hidden_size=dimension,
-                            num_layers=3,
+                            num_layers=2,
                             batch_first=True,
                             bidirectional=True)
         self.drop = nn.Dropout(p=0.3)
         self.relu = nn.ReLU()
-
         self.fc1 = nn.Linear(2*dimension, 2*dimension)
-        self.fc2 = nn.Linear(2*dimension, dimension)
-        self.fc3 = nn.Linear(dimension, dimension)
-        self.fc4 = nn.Linear(dimension, dimension)
-        self.fc5 = nn.Linear(dimension, dimension)
-        self.out = nn.Linear(dimension, 1)
+        #self.fc2 = nn.Linear(2*dimension, dimension)
+        #self.fc3 = nn.Linear(dimension, dimension)
+        self.out = nn.Linear(2*dimension, 1)
 
     def forward(self, text, text_len):
 
@@ -61,20 +58,15 @@ class LSTM(nn.Module):
         hidden1 = self.relu(hidden1)
         hidden1 = self.drop(hidden1)
 
-        hidden2 = self.fc2(hidden1)
-        hidden2 = self.relu(hidden2)
-        hidden2 = self.drop(hidden2)
+        #hidden2 = self.fc2(hidden1)
+        #hidden2 = self.relu(hidden2)
+        #hidden2 = self.drop(hidden2)
 
-        hidden3 = self.fc3(hidden2)
-        hidden3 = self.relu(hidden3)
-        hidden3 = self.drop(hidden3)
-
+        #hidden3 = self.fc3(hidden2)
+        #hidden3 = self.relu(hidden3)
+        #hidden3 = self.drop(hidden3)
         
-        #hidden5 = self.fc5(hidden4)
-        #hidden5 = self.relu(hidden5)
-        #hidden5 = self.drop(hidden5)
-
-        out = self.out(hidden3)
+        out = self.out(hidden1)
         out = torch.squeeze(out, 1)
 
         text_out = torch.sigmoid(out)
@@ -196,9 +188,9 @@ if __name__ == "__main__":
                                            format='CSV', fields=fields, skip_header=True)
 
     # Iterators
-    train_iter = BucketIterator(train_split, batch_size=512, sort_key=lambda x: len(x.comment),
+    train_iter = BucketIterator(train_split, batch_size=512,shuffle=True, sort_key=lambda x: len(x.comment),
                             device=device, sort=None, sort_within_batch=None)
-    valid_iter = BucketIterator(valid_split, batch_size=512, sort_key=lambda x: len(x.comment),
+    valid_iter = BucketIterator(valid_split, batch_size=256, sort_key=lambda x: len(x.comment),
                             device=device, sort=True, sort_within_batch=True)
 
     # Vocabulary
@@ -206,10 +198,10 @@ if __name__ == "__main__":
 
     # Train
     model = LSTM().to(device)
-    optimizer = optim.RMSprop(model.parameters(), lr=0.001)
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
     scheduler = ExponentialLR(optimizer, gamma=0.80)
     train(model=model, optimizer=optimizer, scheduler=scheduler, 
-    train_loader=train_iter, num_epochs=5, eval_every=len(train_iter)//10)
+    train_loader=train_iter, num_epochs=2, eval_every=len(train_iter)//10)
 
     # Validation
     trained_model = LSTM().to(device)
