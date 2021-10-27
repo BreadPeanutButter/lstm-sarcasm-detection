@@ -13,7 +13,7 @@ from torch.optim.lr_scheduler import ExponentialLR
 # Training
 import torch.optim as optim
 
-from sklearn.metrics import roc_curve, roc_auc_score, classification_report, confusion_matrix
+from sklearn.metrics import accuracy_score, roc_curve, roc_auc_score, classification_report, confusion_matrix
 
 import numpy as np
 
@@ -67,14 +67,9 @@ class LSTM(nn.Module):
 
         return text_out
 
-def train(model,
-          optimizer,
-          scheduler,
-          train_loader,
-          valid_loader,
-          valid_every, # validate every how many batches
-          criterion = nn.BCELoss(),
-          num_epochs = 1):
+def train(model, optimizer, scheduler, train_loader,
+          valid_loader,valid_every, # validate every how many batches
+          criterion = nn.BCELoss(), num_epochs = 1):
   
     start = datetime.datetime.now()
     # initialize running values
@@ -83,6 +78,7 @@ def train(model,
     global_batch_num = 0
     valid_running_loss = 0.0
     valid_loss_list = []
+    valid_accuracy_list = []
     train_loss_list = []
     epoch_list = []
 
@@ -113,16 +109,18 @@ def train(model,
             # validation
             average_train_loss = 0
             average_valid_loss = valid_running_loss / len(valid_loader)
+            valid_accuracy = accuracy_score(y_true, y_pred)
             train_loss_list.append(average_train_loss)
             valid_loss_list.append(average_valid_loss)
+            valid_accuracy_list.append(valid_accuracy)
             epoch_list.append(0)
             valid_running_loss = 0.0     
-            print('Epoch [{}/{}], Batch [{}/{}], Train Loss: {:.4f}, Valid Loss: {:.4f}'
-                    .format(epoch+1, num_epochs, local_batch_num, len(train_loader),
-                            average_train_loss, average_valid_loss))
+            print('Epoch [{}/{}], Batch [{}/{}], Train Loss: {:.4f}, Valid Loss: {:.4f}, Valid Accuracy: {:.4f}'
+                    .format(0, num_epochs, local_batch_num, len(train_loader),
+                            average_train_loss, average_valid_loss, valid_accuracy))
 
             model.train()
-            
+
         for (labels, (comment, comment_len)), _ in train_loader:
             labels = labels.to(device)
             comment = comment.to(device)
@@ -162,8 +160,10 @@ def train(model,
                 # validation
                 average_train_loss = running_loss / valid_every
                 average_valid_loss = valid_running_loss / len(valid_loader)
+                valid_accuracy = accuracy_score(y_true, y_pred)
                 train_loss_list.append(average_train_loss)
                 valid_loss_list.append(average_valid_loss)
+                valid_accuracy_list.append(valid_accuracy)
                 epoch_list.append(global_batch_num/len(train_loader))
 
                 # resetting running values
@@ -172,9 +172,9 @@ def train(model,
                 model.train()
 
                 # print progress
-                print('Epoch [{}/{}], Batch [{}/{}], Train Loss: {:.4f}, Valid Loss: {:.4f}'
-                      .format(epoch+1, num_epochs, local_batch_num, len(train_loader),
-                              average_train_loss, average_valid_loss))
+                print('Epoch [{}/{}], Batch [{}/{}], Train Loss: {:.4f}, Valid Loss: {:.4f}, Valid Accuracy: {:.4f}'
+                .format(epoch+1, num_epochs, local_batch_num, len(train_loader),
+                average_train_loss, average_valid_loss, valid_accuracy))
         scheduler.step()
 
     end = datetime.datetime.now()
