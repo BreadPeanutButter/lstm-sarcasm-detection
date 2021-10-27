@@ -87,47 +87,47 @@ def train(model, optimizer, scheduler, train_loader,
     for epoch in range(num_epochs):
         local_batch_num = 0
         running_loss = 0
-        if global_batch_num == 0:
-            y_pred = []
-            y_true = []
-            model.eval()
-            with torch.no_grad():                    
-            # validation loss loop
-                for (labels, (comment, comment_len)), _ in valid_loader:
-                    labels = labels.to(device)
-                    comment = comment.to(device)
-                    comment_len = comment_len.to(device)
-                    output = model(comment, comment_len)
-
-                    prediction = (output > 0.5).int()
-                    y_pred.extend(prediction.tolist())
-                    y_true.extend(labels.tolist())
-
-                    loss = criterion(output, labels)
-                    valid_running_loss += loss.item()       
-
-            # validation
-            average_train_loss = 0
-            average_valid_loss = valid_running_loss / len(valid_loader)
-            valid_accuracy = accuracy_score(y_true, y_pred)
-            train_loss_list.append(average_train_loss)
-            valid_loss_list.append(average_valid_loss)
-            valid_accuracy_list.append(valid_accuracy)
-            epoch_list.append(0)
-            valid_running_loss = 0.0     
-            print('Epoch [{}/{}], Batch [{}/{}], Train Loss: {:.4f}, Valid Loss: {:.4f}, Valid Accuracy: {:.4f}'
-                    .format(0, num_epochs, local_batch_num, len(train_loader),
-                            average_train_loss, average_valid_loss, valid_accuracy))
-
-            model.train()
 
         for (labels, (comment, comment_len)), _ in train_loader:
             labels = labels.to(device)
             comment = comment.to(device)
             comment_len = comment_len.to(device)
             output = model(comment, comment_len)
-
             loss = criterion(output, labels)
+            
+            # Validate once at the beginning
+            if global_batch_num == 0:
+                y_pred = []
+                y_true = []
+                model.eval()
+                with torch.no_grad():                    
+                # validation loss loop
+                    for (labels, (comment, comment_len)), _ in valid_loader:
+                        labels = labels.to(device)
+                        comment = comment.to(device)
+                        comment_len = comment_len.to(device)
+                        output = model(comment, comment_len)
+
+                        prediction = (output > 0.5).int()
+                        y_pred.extend(prediction.tolist())
+                        y_true.extend(labels.tolist())
+
+                        loss = criterion(output, labels)
+                        valid_running_loss += loss.item()       
+
+                # validation
+                average_train_loss = loss.item()
+                average_valid_loss = valid_running_loss / len(valid_loader)
+                valid_accuracy = accuracy_score(y_true, y_pred)
+                train_loss_list.append(average_train_loss)
+                valid_loss_list.append(average_valid_loss)
+                valid_accuracy_list.append(valid_accuracy)
+                epoch_list.append(0)
+                valid_running_loss = 0.0     
+                print('Epoch [{}/{}], Batch [{}/{}], Train Loss: {:.4f}, Valid Loss: {:.4f}, Valid Accuracy: {:.4f}'
+                        .format(epoch, num_epochs, local_batch_num, len(train_loader),
+                                average_train_loss, average_valid_loss, valid_accuracy))
+            model.train()
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
