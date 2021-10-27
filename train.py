@@ -234,21 +234,23 @@ def plot_loss(metrics):
     sns.set(style='darkgrid')
     sns.set(font_scale=1.5)
     plt.rcParams["figure.figsize"] = (12,6)
-    plt.title("Loss against Epochs")
-    plt.plot(epoch, train, 'b-o', label='Train')
-    plt.plot(epoch, valid, 'g-o', label='Valid')
+    plt.title("Loss against Epoch")
+    plt.plot(epoch, train, '.b-', label='Training')
+    plt.plot(epoch, valid, '.g-', label='Validation')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.legend()
     plt.savefig('loss.png', bbox_inches='tight')
+    plt.cla()
+    plt.clf()
 
 def plot_accuarcy(metrics):
     accuracy, epoch = metrics['valid_accuracy_list'], metrics['epoch_list']
     sns.set(style='darkgrid')
     sns.set(font_scale=1.5)
     plt.rcParams["figure.figsize"] = (12,6)
-    plt.title("Validation Accuracy against Epochs")
-    plt.plot(epoch, accuracy, 'm-o', label='Accuracy')
+    plt.title("Validation Accuracy against Epoch")
+    plt.plot(epoch, accuracy, '.m-', label='Accuracy')
     plt.xlabel('Epoch')
     plt.ylabel('Validation Accuracy')
     plt.savefig('accuracy.png', bbox_inches='tight')
@@ -279,9 +281,9 @@ if __name__ == "__main__":
     # Train
     model = LSTM().to(device)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
-    scheduler = ExponentialLR(optimizer, gamma=0.70)
+    scheduler = ExponentialLR(optimizer, gamma=0.80)
     train(model=model, optimizer=optimizer, scheduler=scheduler, 
-    train_loader=train_iter, valid_loader=valid_iter, num_epochs=1, valid_every=len(train_iter)//10) # Evaluate 10 times per epoch
+    train_loader=train_iter, valid_loader=valid_iter, num_epochs=5, valid_every=len(train_iter)//10) # Evaluate 10 times per epoch
 
     # Validation
     trained_model = LSTM().to(device)
