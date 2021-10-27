@@ -19,8 +19,12 @@ import numpy as np
 
 import datetime
 
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 torch.manual_seed(0)
+
 
 class LSTM(nn.Module):
 
@@ -37,8 +41,6 @@ class LSTM(nn.Module):
         self.drop = nn.Dropout(p=0.3)
         self.relu = nn.ReLU()
         self.fc1 = nn.Linear(2*dimension, 2*dimension)
-        #self.fc2 = nn.Linear(2*dimension, dimension)
-        #self.fc3 = nn.Linear(dimension, dimension)
         self.out = nn.Linear(2*dimension, 1)
 
     def forward(self, text, text_len):
@@ -57,14 +59,6 @@ class LSTM(nn.Module):
         hidden1 = self.fc1(encoding)
         hidden1 = self.relu(hidden1)
         hidden1 = self.drop(hidden1)
-
-        #hidden2 = self.fc2(hidden1)
-        #hidden2 = self.relu(hidden2)
-        #hidden2 = self.drop(hidden2)
-
-        #hidden3 = self.fc3(hidden2)
-        #hidden3 = self.relu(hidden3)
-        #hidden3 = self.drop(hidden3)
         
         out = self.out(hidden1)
         out = torch.squeeze(out, 1)
@@ -77,63 +71,122 @@ def train(model,
           optimizer,
           scheduler,
           train_loader,
-          eval_every,
+          valid_loader,
+          valid_every, # validate every how many batches
           criterion = nn.BCELoss(),
-          num_epochs = 20):
+          num_epochs = 1):
   
     start = datetime.datetime.now()
     # initialize running values
     running_loss = 0.0
-    global_step = 0
+    local_batch_num = 0
+    global_batch_num = 0
+    valid_running_loss = 0.0
+    valid_loss_list = []
     train_loss_list = []
-    global_steps_list = []
+    epoch_list = []
 
     # training loop
     model.train()
     for epoch in range(num_epochs):
-        for (labels, (comment, comment_len)), _ in train_loader:
-            try:
-              labels2 = labels.to(device)
-              comment = comment.to(device)
-              comment_len = comment_len.to(device)
-              output = model(comment, comment_len)
+        local_batch_num = 0
+        running_loss = 0
+        if global_batch_num == 0:
+            y_pred = []
+            y_true = []
+            model.eval()
+            with torch.no_grad():                    
+            # validation loss loop
+                for (labels, (comment, comment_len)), _ in valid_loader:
+                    labels = labels.to(device)
+                    comment = comment.to(device)
+                    comment_len = comment_len.to(device)
+                    output = model(comment, comment_len)
 
-              loss = criterion(output, labels2)
-              optimizer.zero_grad()
-              loss.backward()
-              optimizer.step()
-            except:
-              print(labels)
-              raise 
+                    prediction = (output > 0.5).int()
+                    y_pred.extend(prediction.tolist())
+                    y_true.extend(labels.tolist())
+
+                    loss = criterion(output, labels)
+                    valid_running_loss += loss.item()       
+
+            # validation
+            average_train_loss = 0
+            average_valid_loss = valid_running_loss / len(valid_loader)
+            train_loss_list.append(average_train_loss)
+            valid_loss_list.append(average_valid_loss)
+            epoch_list.append(0)
+            valid_running_loss = 0.0     
+            print('Epoch [{}/{}], Batch [{}/{}], Train Loss: {:.4f}, Valid Loss: {:.4f}'
+                    .format(epoch+1, num_epochs, local_batch_num, len(train_loader),
+                            average_train_loss, average_valid_loss))
+
+            model.train()
+            
+        for (labels, (comment, comment_len)), _ in train_loader:
+            labels = labels.to(device)
+            comment = comment.to(device)
+            comment_len = comment_len.to(device)
+            output = model(comment, comment_len)
+
+            loss = criterion(output, labels)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
 
             # update running values
             running_loss += loss.item()
-            global_step += 1
+            local_batch_num += 1
+            global_batch_num += 1
 
-            # evaluation step
-            if global_step % eval_every == 0:
-                model.eval()       
+            # validation step
+            if local_batch_num % valid_every == 0:
+                y_pred = []
+                y_true = []
+                model.eval()
+                with torch.no_grad():                    
+                # validation loss loop
+                    for (labels, (comment, comment_len)), _ in valid_loader:
+                        labels = labels.to(device)
+                        comment = comment.to(device)
+                        comment_len = comment_len.to(device)
+                        output = model(comment, comment_len)
 
-                # evaluation
-                average_train_loss = running_loss / eval_every
+                        prediction = (output > 0.5).int()
+                        y_pred.extend(prediction.tolist())
+                        y_true.extend(labels.tolist())
+
+                        loss = criterion(output, labels)
+                        valid_running_loss += loss.item()       
+
+                # validation
+                average_train_loss = running_loss / valid_every
+                average_valid_loss = valid_running_loss / len(valid_loader)
                 train_loss_list.append(average_train_loss)
-                global_steps_list.append(global_step)
+                valid_loss_list.append(average_valid_loss)
+                epoch_list.append(global_batch_num/len(train_loader))
 
                 # resetting running values
-                running_loss = 0.0                
+                running_loss = 0.0    
+                valid_running_loss = 0.0     
                 model.train()
 
                 # print progress
-                print('Epoch [{}/{}], Step [{}/{}], Train Loss: {:.4f}'
-                      .format(epoch+1, num_epochs, global_step, num_epochs*len(train_loader),
-                              average_train_loss))
+                print('Epoch [{}/{}], Batch [{}/{}], Train Loss: {:.4f}, Valid Loss: {:.4f}'
+                      .format(epoch+1, num_epochs, local_batch_num, len(train_loader),
+                              average_train_loss, average_valid_loss))
         scheduler.step()
 
     end = datetime.datetime.now()
     torch.save(model.state_dict(), source_folder + '/lstm_model.pt')
 
+    state_dict = {'train_loss_list': train_loss_list,
+                  'valid_loss_list': valid_loss_list,
+                  'epoch_list': epoch_list}
+    torch.save(state_dict, source_folder + '/metrics.pt')
+
     print('Training finished in {} minutes.'.format((end - start).seconds / 60.0))
-    print('Model weights saved.')
+    print('Model weights and metrics saved.')
 
 def validate(model, valid_loader):
     y_pred = []
@@ -173,6 +226,31 @@ def validate(model, valid_loader):
     print('Optimal Confusion Matrix')
     print(cm2)
 
+def plot_loss(metrics):
+    train, valid, epoch = metrics['train_loss_list'], metrics['valid_loss_list'], metrics['epoch_list']
+    sns.set(style='darkgrid')
+    sns.set(font_scale=1.5)
+    plt.rcParams["figure.figsize"] = (12,6)
+    plt.title("Loss against Epochs")
+    plt.plot(epoch, train, 'b-o', label='Train')
+    plt.plot(epoch, valid, 'g-o', label='Valid')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.savefig('loss.png', bbox_inches='tight')
+
+def plot_accuarcy(metrics):
+    accuracy = metrics['valid_accuracy']
+    sns.set(style='darkgrid')
+    sns.set(font_scale=1.5)
+    plt.rcParams["figure.figsize"] = (12,6)
+    plt.title("Validation Accuracy aagainst Epochs")
+    plt.plot(accuracy, train, 'b-o', label='Accuracy')
+    plt.xlabel('Epoch')
+    plt.ylabel('Validation Accuracy')
+    plt.legend()
+    plt.savefig('accuracy.png', bbox_inches='tight')
+
 
 if __name__ == "__main__":
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -190,7 +268,7 @@ if __name__ == "__main__":
     # Iterators
     train_iter = BucketIterator(train_split, batch_size=512,shuffle=True, sort_key=lambda x: len(x.comment),
                             device=device, sort=None, sort_within_batch=None)
-    valid_iter = BucketIterator(valid_split, batch_size=256, sort_key=lambda x: len(x.comment),
+    valid_iter = BucketIterator(valid_split, batch_size=512, sort_key=lambda x: len(x.comment),
                             device=device, sort=True, sort_within_batch=True)
 
     # Vocabulary
@@ -199,11 +277,14 @@ if __name__ == "__main__":
     # Train
     model = LSTM().to(device)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
-    scheduler = ExponentialLR(optimizer, gamma=0.80)
+    scheduler = ExponentialLR(optimizer, gamma=0.70)
     train(model=model, optimizer=optimizer, scheduler=scheduler, 
-    train_loader=train_iter, num_epochs=2, eval_every=len(train_iter)//10)
+    train_loader=train_iter, valid_loader=valid_iter, num_epochs=10, valid_every=len(train_iter)//10) # Evaluate 10 times per epoch
 
     # Validation
     trained_model = LSTM().to(device)
     trained_model.load_state_dict(torch.load(source_folder + '/lstm_model.pt'))
     validate(trained_model, valid_iter)
+    metrics = torch.load(source_folder + '/metrics.pt')
+    plot_loss(metrics)
+    plot_accuarcy(metrics)
