@@ -184,6 +184,7 @@ def train(model, optimizer, scheduler, train_loader,
 
     state_dict = {'train_loss_list': train_loss_list,
                   'valid_loss_list': valid_loss_list,
+                  'valid_accuracy_list': valid_accuracy_list,
                   'epoch_list': epoch_list}
     torch.save(state_dict, source_folder + '/metrics.pt')
 
@@ -242,15 +243,14 @@ def plot_loss(metrics):
     plt.savefig('loss.png', bbox_inches='tight')
 
 def plot_accuarcy(metrics):
-    accuracy = metrics['valid_accuracy']
+    accuracy, epoch = metrics['valid_accuracy_list'], metrics['epoch_list']
     sns.set(style='darkgrid')
     sns.set(font_scale=1.5)
     plt.rcParams["figure.figsize"] = (12,6)
-    plt.title("Validation Accuracy aagainst Epochs")
-    plt.plot(accuracy, train, 'b-o', label='Accuracy')
+    plt.title("Validation Accuracy against Epochs")
+    plt.plot(epoch, accuracy, 'm-o', label='Accuracy')
     plt.xlabel('Epoch')
     plt.ylabel('Validation Accuracy')
-    plt.legend()
     plt.savefig('accuracy.png', bbox_inches='tight')
 
 
