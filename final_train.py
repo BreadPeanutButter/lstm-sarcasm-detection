@@ -148,6 +148,11 @@ def evaluate(model, eval_loader):
     print('Optimal Confusion Matrix')
     print(cm2)
 
+    state_dict = {'y_pred': y_pred,
+                  'y_true': y_true,
+                  'y_pred_raw': y_pred_raw}
+    torch.save(state_dict, source_folder + '/test_preds.pt')
+
 
 if __name__ == "__main__":
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -183,5 +188,4 @@ if __name__ == "__main__":
     trained_model = LSTM().to(device)
     trained_model.load_state_dict(torch.load(source_folder + '/lstm_model_final.pt'))
     evaluate(trained_model, test_iter)
-    metrics = torch.load(source_folder + '/metrics.pt')
 
