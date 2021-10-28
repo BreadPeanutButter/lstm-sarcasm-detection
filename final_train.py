@@ -139,7 +139,7 @@ def evaluate(model, eval_loader):
     print('auc: ', auc)
     sns.set(style='darkgrid')
     sns.set(font_scale=1.5)
-    skplt.metrics.plot_roc(y_true, y_pred_raw)
+    skplt.metrics.plot_roc(y_true, y_pred_raw, classes_to_plot=[1], plot_macro=False, plot_micro=False)
     plt.savefig('auc.png', bbox_inches='tight')
     plt.cla()
     plt.clf()
