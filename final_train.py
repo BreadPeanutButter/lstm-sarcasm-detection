@@ -137,12 +137,15 @@ def evaluate(model, eval_loader):
 
     auc = roc_auc_score(y_true, y_pred_raw)
     print('auc: ', auc)
+    sns.set(style='darkgrid')
     sns.set(font_scale=1.5)
     skplt.metrics.plot_roc(y_true, y_pred_raw)
     plt.savefig('auc.png', bbox_inches='tight')
     plt.cla()
     plt.clf()
 
+    sns.set(style='darkgrid')
+    sns.set(font_scale=1.5)
     skplt.metrics.plot_confusion_matrix(y_true, y_pred)
     plt.savefig('confusion_matrix.png', bbox_inches='tight')
 
