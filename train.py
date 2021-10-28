@@ -231,10 +231,7 @@ def validate(model, valid_loader):
 
 def plot_loss(metrics):
     train, valid, epoch = metrics['train_loss_list'], metrics['valid_loss_list'], metrics['epoch_list']
-    plt.cla()
-    plt.clf()
     sns.set(style='darkgrid')
-    sns.set(font_scale=1.5)
     plt.rcParams["figure.figsize"] = (12,6)
     plt.title("Loss against Epoch")
     plt.plot(epoch, train, '.b-', label='Training')
