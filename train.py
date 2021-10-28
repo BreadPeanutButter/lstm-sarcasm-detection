@@ -240,7 +240,7 @@ def plot_loss(metrics):
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.legend()
-    plt.savefig('loss.png', bbox_inches='tight')
+    plt.savefig('valid_loss.png', bbox_inches='tight')
     plt.cla()
     plt.clf()
 
@@ -253,7 +253,7 @@ def plot_accuarcy(metrics):
     plt.plot(epoch, accuracy, '.m-', label='Accuracy')
     plt.xlabel('Epoch')
     plt.ylabel('Validation Accuracy')
-    plt.savefig('accuracy.png', bbox_inches='tight')
+    plt.savefig('valid_accuracy.png', bbox_inches='tight')
 
 
 if __name__ == "__main__":

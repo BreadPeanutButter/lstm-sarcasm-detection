@@ -138,17 +138,15 @@ def evaluate(model, eval_loader):
     auc = roc_auc_score(y_true, y_pred_raw)
     print('auc: ', auc)
     sns.set(style='darkgrid')
-    sns.set(font_scale=1.5)
     y_prob = np.stack((1-np.array(y_pred_raw), np.array(y_pred_raw)),axis=1)
-    skplt.metrics.plot_roc(y_true, y_prob, classes_to_plot=[1], plot_macro=False, plot_micro=False)
-    plt.savefig('auc.png', bbox_inches='tight')
+    skplt.metrics.plot_roc(y_true, y_prob, classes_to_plot=[1], title="ROC Curve", plot_macro=False, plot_micro=False)
+    plt.savefig('test_auc.png', bbox_inches='tight')
     plt.cla()
     plt.clf()
 
     sns.set(style='darkgrid')
-    sns.set(font_scale=1.5)
     skplt.metrics.plot_confusion_matrix(y_true, y_pred)
-    plt.savefig('confusion_matrix.png', bbox_inches='tight')
+    plt.savefig('test_confusion_matrix.png', bbox_inches='tight')
 
 
     state_dict = {'y_pred': y_pred,
@@ -185,7 +183,7 @@ if __name__ == "__main__":
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     scheduler = ExponentialLR(optimizer, gamma=0.80)
     train(model=model, optimizer=optimizer, scheduler=scheduler, 
-    train_loader=train_iter, num_epochs=1, track_every=len(train_iter)//10)
+    train_loader=train_iter, num_epochs=2, track_every=len(train_iter)//10)
 
     # Evaluation
     trained_model = LSTM().to(device)
