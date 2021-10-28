@@ -139,7 +139,7 @@ def evaluate(model, eval_loader):
     print('auc: ', auc)
     sns.set(style='darkgrid')
     sns.set(font_scale=1.5)
-    y_prob = np.concatenate((1-y_pred_raw, y_pred_raw),axis=1)
+    y_prob = np.concatenate((1-np.array(y_pred_raw), np.array(y_pred_raw)),axis=1)
     skplt.metrics.plot_roc(y_true, y_prob, classes_to_plot=[1], plot_macro=False, plot_micro=False)
     plt.savefig('auc.png', bbox_inches='tight')
     plt.cla()
