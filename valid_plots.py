@@ -4,6 +4,8 @@ import torch
 
 def plot_loss(metrics):
     train, valid, epoch = metrics['train_loss_list'], metrics['valid_loss_list'], metrics['epoch_list']
+    plt.cla()
+    plt.clf()
     sns.set(style='darkgrid')
     sns.set(font_scale=1.5)
     plt.rcParams["figure.figsize"] = (12,6)
@@ -19,6 +21,8 @@ def plot_loss(metrics):
 
 def plot_accuarcy(metrics):
     accuracy, epoch = metrics['valid_accuracy_list'], metrics['epoch_list']
+    plt.cla()
+    plt.clf()
     sns.set(style='darkgrid')
     plt.rcParams["figure.figsize"] = (12,6)
     plt.title("Validation Accuracy against Epoch")

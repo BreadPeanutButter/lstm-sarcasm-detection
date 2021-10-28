@@ -231,6 +231,8 @@ def validate(model, valid_loader):
 
 def plot_loss(metrics):
     train, valid, epoch = metrics['train_loss_list'], metrics['valid_loss_list'], metrics['epoch_list']
+    plt.cla()
+    plt.clf()
     sns.set(style='darkgrid')
     sns.set(font_scale=1.5)
     plt.rcParams["figure.figsize"] = (12,6)
@@ -241,11 +243,12 @@ def plot_loss(metrics):
     plt.ylabel('Loss')
     plt.legend()
     plt.savefig('valid_loss.png', bbox_inches='tight')
-    plt.cla()
-    plt.clf()
+
 
 def plot_accuarcy(metrics):
     accuracy, epoch = metrics['valid_accuracy_list'], metrics['epoch_list']
+    plt.cla()
+    plt.clf()
     sns.set(style='darkgrid')
     plt.rcParams["figure.figsize"] = (12,6)
     plt.title("Validation Accuracy against Epoch")
