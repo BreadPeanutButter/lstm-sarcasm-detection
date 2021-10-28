@@ -100,7 +100,7 @@ def train(model, optimizer, scheduler, train_loader, track_every, # validate eve
 
             if local_batch_num % track_every == 0:
                 # print progress
-                print('Epoch [{}/{}], Batch [{}/{}]').format(epoch+1, num_epochs, local_batch_num, len(train_loader))
+                print('Epoch [{}/{}], Batch [{}/{}]'.format(epoch+1, num_epochs, local_batch_num, len(train_loader)))
 
         scheduler.step()
 
