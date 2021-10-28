@@ -151,7 +151,7 @@ def evaluate(model, eval_loader):
     state_dict = {'y_pred': y_pred,
                   'y_true': y_true,
                   'y_pred_raw': y_pred_raw}
-    torch.save(state_dict, source_folder + '/test_preds.pt')
+    torch.save(state_dict, source_folder + '/final_preds.pt')
 
 
 if __name__ == "__main__":
