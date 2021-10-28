@@ -16,8 +16,6 @@ def plot_loss(metrics):
     plt.ylabel('Loss')
     plt.legend()
     plt.savefig('valid_loss.png', bbox_inches='tight')
-    plt.cla()
-    plt.clf()
 
 def plot_accuarcy(metrics):
     accuracy, epoch = metrics['valid_accuracy_list'], metrics['epoch_list']
