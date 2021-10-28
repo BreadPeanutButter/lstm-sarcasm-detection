@@ -13,7 +13,7 @@ from torch.optim.lr_scheduler import ExponentialLR
 # Training
 import torch.optim as optim
 
-from sklearn.metrics import accuracy_score, roc_curve, roc_auc_score, classification_report, confusion_matrix
+from sklearn.metrics import roc_curve, roc_auc_score, classification_report, confusion_matrix
 
 import numpy as np
 
@@ -21,6 +21,7 @@ import datetime
 
 import matplotlib.pyplot as plt
 import seaborn as sns
+import scikitplot as skplt
 
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 torch.manual_seed(0)
@@ -134,19 +135,17 @@ def evaluate(model, eval_loader):
     print('Confusion Matrix')
     print(cm)
 
-    print('ROC')
-    fpr, tpr, thresholds = roc_curve(y_true, y_pred_raw)
-    optimal_threshold = thresholds[np.argmax(tpr-fpr)]
     auc = roc_auc_score(y_true, y_pred_raw)
     print('auc: ', auc)
-    print('Optimal threshold: ', optimal_threshold)
+    sns.set(font_scale=1.5)
+    skplt.metrics.plot_roc(y_true, y_pred_raw)
+    plt.savefig('auc.png', bbox_inches='tight')
+    plt.cla()
+    plt.clf()
 
-    y_pred_optimal = [int(x > optimal_threshold) for x in y_pred_raw]
-    print('Optimal Classification Report:')
-    print(classification_report(y_true, y_pred_optimal, labels=[1,0], target_names=['Positive', 'Negative'], digits=4))
-    cm2 = confusion_matrix(y_true, y_pred_optimal, labels=[1,0])
-    print('Optimal Confusion Matrix')
-    print(cm2)
+    skplt.metrics.plot_confusion_matrix(y_true, y_pred)
+    plt.savefig('confusion_matrix.png', bbox_inches='tight')
+
 
     state_dict = {'y_pred': y_pred,
                   'y_true': y_true,
