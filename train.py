@@ -247,12 +247,11 @@ def plot_loss(metrics):
 def plot_accuarcy(metrics):
     accuracy, epoch = metrics['valid_accuracy_list'], metrics['epoch_list']
     sns.set(style='darkgrid')
-    sns.set(font_scale=1.5)
     plt.rcParams["figure.figsize"] = (12,6)
     plt.title("Validation Accuracy against Epoch")
     plt.plot(epoch, accuracy, '.m-', label='Accuracy')
     plt.xlabel('Epoch')
-    plt.ylabel('Validation Accuracy')
+    plt.ylabel('Accuracy')
     plt.savefig('valid_accuracy.png', bbox_inches='tight')
 
 
