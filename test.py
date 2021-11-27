@@ -17,6 +17,8 @@ import torch.optim as optim
 # Evaluation
 from sklearn.metrics import roc_curve, roc_auc_score, classification_report, confusion_matrix
 
+import csv
+
 torch.manual_seed(0)
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 
@@ -87,11 +89,15 @@ def evaluate(model, test_loader, threshold=0.5):
     print(cm)
 
     print('ROC')
-    fpr, tpr, thresholds = roc_curve(y_true, y_pred_raw)
-    optimal_threshold = thresholds[np.argmax(tpr-fpr)]
     auc = roc_auc_score(y_true, y_pred_raw)
     print('auc: ', auc)
-    print('Optimal threshold: ', optimal_threshold)
+    
+    print(len(y_pred))
+    with open('lstm_out.csv', 'w') as file:
+        wr = csv.writer(file, quoting=csv.QUOTE_ALL)
+        for i in y_pred:
+            wr.writerow([i])
+
 
 if __name__ == "__main__":
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -103,17 +109,17 @@ if __name__ == "__main__":
 
     source_folder = '/home/j/joonjie/project'
     # TabularDataset
-    train_split, test_split = TabularDataset.splits(path=source_folder, train='sarcasm_train.csv', test='sarcasm_test.csv',
+    train_split, test_split = TabularDataset.splits(path=source_folder, train='sarcasm_train_valid.csv', test='sarcasm_test.csv',
                                            format='CSV', fields=fields, skip_header=True)
 
     # Iterators
-    test_iter = BucketIterator(test_split, batch_size=512, sort_key=lambda x: len(x.comment),
-                            device=device, sort=True, sort_within_batch=True)
+    test_iter = BucketIterator(test_split, batch_size=512, shuffle=False,
+                            device=device, sort=False)
 
     # Vocabulary
     text_field.build_vocab(train_split, min_freq=3)
 
     # Evaluate
     trained_model = LSTM().to(device)
-    trained_model.load_state_dict(torch.load(source_folder + '/lstm_model.pt'))
+    trained_model.load_state_dict(torch.load(source_folder + '/lstm_model_final.pt'))
     evaluate(trained_model, test_iter)
